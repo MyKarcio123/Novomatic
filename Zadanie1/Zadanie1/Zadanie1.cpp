@@ -1,13 +1,15 @@
-﻿#include <GL/glew.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <array>
+#include <memory>
 #include <math.h>
 #include <vector>
 #include "vec2.h"
 #include "Window.h"
 #include "Triangle.h"
 
+#define uniqueTriangle std::unique_ptr<Triangle>
 int HEIGHT = 480;
 int WIDTH = 640;
 bool isBoxColliding(const Triangle& a, const Triangle& b) {
@@ -117,11 +119,11 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    std::vector<Triangle*> colliders;
+    std::vector<uniqueTriangle> colliders;
     int collidersToGenerate = rand() % 5 + 4;
     for (float i = 0; i < collidersToGenerate; ++i) {
-        Triangle* collider = new Triangle({ vec2{ -0.1f, -0.2f },vec2{ 0.3f, -0.4f },vec2{ 0.0f, 0.5f } }, vec2{ randFloat() ,randFloat()}, rand() % 180, vec3{0.0f,1.0f,0.0f});
-        colliders.push_back(collider);
+        uniqueTriangle collider(new Triangle({ vec2{-0.1f, -0.2f},vec2{0.3f, -0.4f},vec2{0.0f, 0.5f} }, vec2{ randFloat() ,randFloat() }, rand() % 180, vec3{ 0.0f,1.0f,0.0f }));
+        colliders.push_back(std::move(collider));
     }
     // Set up the triangle
     Triangle triangle({ vec2{ -0.05f, -0.05f },vec2{ 0.05f, -0.05f },vec2{ 0.0f, 0.05f } });
@@ -134,9 +136,12 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT);
         triangle.move();
         triangle.isColliding = false;
+
         colliders[0]->rotate(0.001f);
         colliders[1]->rotate(-0.002f);
-        for (Triangle* collider : colliders) {
+
+        
+        for (uniqueTriangle& collider : colliders) {
             if (isColliding(triangle, *collider)) {
                 triangle.isColliding = true;
                 collider->isColliding = true;
@@ -147,7 +152,7 @@ int main(void)
             collider->draw();
         }
         triangle.draw();
-
+   
         // Swap front and back buffers
         glfwSwapBuffers(window);
 
